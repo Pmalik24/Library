@@ -30,7 +30,7 @@ def admin_menu():
         elif admin_choice == "2":
             admin_update()
         elif admin_choice == "3":
-             admin_delete()
+             admin_delete_menu()
         elif admin_choice == "4":
             admin_view_menu()  # This calls the view submenu
         elif admin_choice == "5":
@@ -190,9 +190,49 @@ def admin_update():
     # Implementation for update functionality
     pass
 
-def admin_delete():
-    pass
+def admin_delete_menu():
+    while True:
+        print("\nAdmin Delete\Add Menu:")
+        print("1. Books\n2. Members\n3. Go Back\n4. Exit\n")
+        view_choice = input("Select an option: ")
 
+        if view_choice == "1":
+            admin_delete_book()
+        elif view_choice == "2":
+            admin_delete_member()
+        elif view_choice == "3":
+            return  # This will return to the previous menu (admin_menu)
+        elif view_choice == "4":
+            sys.exit("Exiting the system.")
+        else:
+            print("Invalid choice, please try again.")
+
+def admin_delete_member():
+    cursor = None
+    try:
+        member_id = int(input("Enter the ID of the member to delete: "))
+        engine = create_db_engine(user, password, host, database)
+        connection = engine.raw_connection()
+        cursor = connection.cursor()
+        cursor.callproc("DeleteMember", [member_id])
+
+        # Fetch results from the stored procedure
+        for result_set in cursor.stored_results():
+            for result in result_set.fetchall():
+                print(result[0])  
+
+        connection.commit()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+def admin_delete_book():
+    pass
 
 def librarian_menu():
     while True:
@@ -257,8 +297,8 @@ def main():
 
         if choice == "1":
             admin_menu()
-        # elif choice == "2":
-        #     librarian_menu()
+        elif choice == "2":
+            librarian_menu()
         # elif choice == "3":
         #     member_menu()
         elif choice == "4":
