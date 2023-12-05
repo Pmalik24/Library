@@ -90,7 +90,7 @@ def admin_insert_books():
 
     except Exception as e:
         print(f"An error occurred: {e}")
-        
+
 def admin_insert_members():
     try:
         engine = create_db_engine(user, password, host, database)
@@ -148,6 +148,7 @@ def admin_add_librarians():
                 print(member)
     except Exception as e:
         print(f"An error occurred: {e}")
+
 def admin_view_menu():
     while True:
         print("\nAdmin View Menu:")
@@ -167,9 +168,6 @@ def admin_view_menu():
 
 # Define similar functions for librarian_menu(), member_menu(), etc.
 
-def admin_delete():
-    pass
-
 def admin_view_books():
     try:
         engine = create_db_engine(user, password, host, database)
@@ -178,7 +176,6 @@ def admin_view_books():
         print(df)
     except Exception as e:
         print(f"An error occurred: {e}")
-
 
 def admin_view_members():
     try:
@@ -189,13 +186,68 @@ def admin_view_members():
     except Exception as e:
         print(f"An error occurred: {e}")
 
-
-
 def admin_update():
     # Implementation for update functionality
     pass
 
-# ... other specific functions for each action ...
+def admin_delete():
+    pass
+
+
+def librarian_menu():
+    while True:
+        print("\nLibrarian Menu:")
+        print("1. View\n2. Update Availability Status of Books\n3. Return to Main Menu\n4. Exit")
+        choice = input("Select an option: ")
+
+        if choice == "1":
+            librarian_view_menu()
+        elif choice == "2":
+            librarian_update()
+        elif choice == "3":
+            return  # This will return to the main menu
+        elif choice == "4":
+            sys.exit("Exiting the system.")
+        else:
+            print("Invalid choice, please try again.")
+
+def librarian_view_menu():
+        while True:
+            print("\nLibrarian View Menu:")
+            print("1. Books\n2. Members\n3. Go Back\n4. Exit\n")
+            view_choice = input("Select an option: ")
+
+            if view_choice == "1":
+                librarian_view_books()
+            elif view_choice == "2":
+                librarian_view_members()
+            elif view_choice == "3":
+                return  # This will return to the previous menu (admin_menu)
+            elif view_choice == "4":
+                sys.exit("Exiting the system.")
+            else:
+                print("Invalid choice, please try again.")
+
+def librarian_view_books():
+    try:
+        engine = create_db_engine(user, password, host, database)
+        query = "SELECT * FROM Books"
+        df = pd.read_sql(query, engine)
+        print(df)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def librarian_view_members():
+    try:
+        engine = create_db_engine(user, password, host, database)
+        query = "SELECT * FROM Members"
+        df = pd.read_sql(query, engine)
+        print(df)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def librarian_update():
+    pass
 
 def main():
     while True:
