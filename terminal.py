@@ -59,6 +59,38 @@ def admin_insert_menu():
         else:
             print("Invalid choice, please try again.")
 
+def admin_insert_books():
+    try:
+        engine = create_db_engine(user, password, host, database)
+        title = input("Enter book title: ")
+        author_id = int(input("Enter author ID (0 if not known): "))
+        genre_id = int(input("Enter genre ID (0 if not known): "))
+        isbn = input("Enter ISBN (leave blank for auto-generation): ")
+        publication_year = input("Enter publication year (YYYY-MM-DD): ")
+
+        # Calling the stored procedure
+        procedure_call = text("CALL InsertBook(:title, :author_id, :genre_id, :isbn, :publication_year)")
+        with engine.connect() as connection:
+            connection.execute(procedure_call, {
+                'title': title, 
+                'author_id': author_id, 
+                'genre_id': genre_id, 
+                'isbn': isbn, 
+                'publication_year': publication_year
+            })
+            connection.commit()
+            print("Book successfully added to the database. Here are the last 10 Books")
+            # Fetch and display the latest member(s)
+            recent_books_query = text("SELECT * FROM Books ORDER BY Book_ID DESC LIMIT 10")
+            recent_books = connection.execute(recent_books_query)
+            for book in recent_books:
+                # Formatting the date
+                formatted_date = book.Publication_Year.strftime('%Y-%m-%d') if book.Publication_Year else 'Unknown'
+                print(f"({book.Book_ID}, '{book.Title}', {book.Author_ID}, {book.Genre_ID}, '{book.ISBN}', '{formatted_date}')")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        
 def admin_insert_members():
     try:
         engine = create_db_engine(user, password, host, database)
