@@ -4,6 +4,7 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 import sys
 from sqlalchemy.orm import sessionmaker
+import random
 
 host = "localhost"
 database = "Library"
@@ -25,7 +26,7 @@ def admin_menu():
         admin_choice = input("Select an option: ")
 
         if admin_choice == "1":
-            admin_insert()
+            admin_insert_menu()
         elif admin_choice == "2":
             admin_update()
         elif admin_choice == "3":
@@ -36,11 +37,85 @@ def admin_menu():
             return  # This will return to the main menu
         elif admin_choice == "6":
             sys.exit("Exiting the system.")
-            break
         else:
             print("Invalid choice, please try again.")
 
+def admin_insert_menu():
+    while True:
+        print("\nAdmin Insert\Add Menu:")
+        print("1. Books\n2. Members\n4. Go Back\n5. Exit\n")
+        view_choice = input("Select an option: ")
 
+        if view_choice == "1":
+            admin_insert_books()
+        elif view_choice == "2":
+            admin_insert_members()
+        elif view_choice == "3":
+            admin_add_librarians()
+        elif view_choice == "4":
+            return  # This will return to the previous menu (admin_menu)
+        elif view_choice == "5":
+            sys.exit("Exiting the system.")
+        else:
+            print("Invalid choice, please try again.")
+
+def admin_insert_members():
+    try:
+        engine = create_db_engine(user, password, host, database)
+        first_name = input("Enter member's first name: ")
+        last_name = input("Enter member's last name: ")
+        email = input("Enter member's email: ")
+        subscription_id = random.randint(1, 3)  # Assuming there are only 3 subscription levels
+
+        insert_query = text("""
+            INSERT INTO Members (First_Name, Last_Name, Email, Subscription_ID) 
+            VALUES (:first_name, :last_name, :email, :subscription_id)
+        """)
+        with engine.connect() as connection:
+            connection.execute(insert_query, {
+                'first_name': first_name, 
+                'last_name': last_name, 
+                'email': email, 
+                'subscription_id': subscription_id
+            })
+            connection.commit() 
+            print("Member successfully added. Here's are the last 5 members:")
+
+            # Fetch and display the latest member(s)
+            recent_members_query = text("SELECT * FROM Members ORDER BY Member_ID DESC LIMIT 5")
+            recent_members = connection.execute(recent_members_query)
+            for member in recent_members:
+                print(member)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def admin_add_librarians():
+    try:
+        engine = create_db_engine(user, password, host, database)
+        first_name = input("Enter librarian's first name: ")
+        last_name = input("Enter librarian's last name: ")
+        email = input("Enter librarian's email: ")
+
+        insert_query = text("""
+            INSERT INTO Librarians (First_Name, Last_Name, Email) 
+            VALUES (:first_name, :last_name, :email)
+        """)
+        with engine.connect() as connection:
+            connection.execute(insert_query, {
+                'first_name': first_name, 
+                'last_name': last_name, 
+                'email': email
+            })
+            connection.commit()
+            print("Librarian successfully added.")
+            
+            # Fetch and display the latest member(s)
+            recent_librarians_query = text("SELECT * FROM Librarians ORDER BY Librarian_ID DESC LIMIT 5")
+            recent_librarians = connection.execute(recent_librarians_query)
+            for member in recent_librarians:
+                print(member)
+    except Exception as e:
+        print(f"An error occurred: {e}")
 def admin_view_menu():
     while True:
         print("\nAdmin View Menu:")
@@ -82,9 +157,7 @@ def admin_view_members():
     except Exception as e:
         print(f"An error occurred: {e}")
 
-def admin_insert():
-    # Implementation for insert functionality
-    pass
+
 
 def admin_update():
     # Implementation for update functionality
