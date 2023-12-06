@@ -5,6 +5,12 @@ from sqlalchemy import create_engine, text
 import sys
 from sqlalchemy.orm import sessionmaker
 import random
+from sqlalchemy import create_engine, MetaData,\
+Table, Column, Numeric, Integer, VARCHAR, update
+
+from datetime import date
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 host = "localhost"
 database = "Library"
@@ -279,7 +285,7 @@ def librarian_menu():
 def librarian_view_menu():
         while True:
             print("\nLibrarian View Menu:")
-            print("1. Books\n2. Members\n3. Go Back\n4. Exit\n")
+            print("1. Books\n2. Members\n3. Checkouts by Member\n4. Go Back\n5. Exit\n")
             view_choice = input("Select an option: ")
 
             if view_choice == "1":
@@ -287,11 +293,54 @@ def librarian_view_menu():
             elif view_choice == "2":
                 librarian_view_members()
             elif view_choice == "3":
-                return  # This will return to the previous menu (admin_menu)
+                librarian_filter_by_member()
             elif view_choice == "4":
+                return  # This will return to the previous menu (admin_menu)
+            elif view_choice == "5":
                 sys.exit("Exiting the system.")
             else:
                 print("Invalid choice, please try again.")
+
+def librarian_filter_by_member():
+    cursor = None
+    try:
+        engine = create_db_engine(user, password, host, database)
+        member_id = input("Please enter member ID: ")
+        
+        connection = engine.raw_connection()
+        cursor = connection.cursor()
+
+        # Execute the stored procedure
+        cursor.callproc("GetMemberCheckouts", [member_id])
+
+        # Fetch results from the stored procedure
+        for result_set in cursor.stored_results():
+            results = result_set.fetchall()
+            if results:
+                # Define column headers as per your stored procedure's SELECT statement
+                columns = ['Title', 'Author_First_Name', 'Author_Last_Name', 'Checkout_Date', 'Due_Date', 'Return_Date']
+                df = pd.DataFrame(results, columns=columns)
+                
+                # Convert date columns to datetime if not already
+                df['Checkout_Date'] = pd.to_datetime(df['Checkout_Date']).dt.strftime('%Y-%m-%d')
+                df['Due_Date'] = pd.to_datetime(df['Due_Date']).dt.strftime('%Y-%m-%d')
+                df['Return_Date'] = pd.to_datetime(df['Return_Date']).dt.strftime('%Y-%m-%d')
+
+                print("Checkout information for member ID", member_id)
+                print(df.to_string(index=False))  # Print DataFrame without the index
+            else:
+                print("No checkout information found for member ID", member_id)
+                
+        connection.commit()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        # Close the cursor and the connection
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
 def librarian_view_books():
     try:
@@ -312,7 +361,58 @@ def librarian_view_members():
         print(f"An error occurred: {e}")
 
 def librarian_update():
-    pass
+    try:
+        engine = create_db_engine(user, password, host, database)
+        meta = MetaData()
+        meta.reflect(bind=engine)
+
+        action = int(input("Are you checking out (0) or returning (1) a book? "))
+
+        if action == 0:  # checking out book
+            c_id = input("Please enter the copy ID of the book you are checking out: ")
+            m_id = input("Please enter the member ID of the member checking the book out: ")
+
+            with engine.connect() as connection:
+                # Update the copy table to reflect the book is checked out
+                copy_table = meta.tables['Copy']
+                stmt = update(copy_table).values(Availability_Status="Checked Out").where(copy_table.c.Copy_ID == c_id)
+                connection.execute(stmt)
+
+                # Insert a row into the checkouts table
+                checkouts_table = meta.tables['Checkouts']
+                statement = checkouts_table.insert().values(
+                    Member_ID=m_id,
+                    Copy_ID=c_id,
+                    Checkout_Date=date.today(),
+                    Due_Date=date.today() + relativedelta(months=1),
+                    Return_Date=None,
+                    Librarian_ID=random.randint(1,10)
+                )
+                connection.execute(statement)
+
+                # Fetch the most recent insert's Checkout_ID
+                checkout_df = pd.read_sql("SELECT Checkout_ID FROM Checkouts", con=engine)
+                checkout_id = checkout_df["Checkout_ID"].max()
+                print(f"Your checkout ID is {checkout_id}. Please save this to return the book")
+
+        elif action == 1:  # returning a book
+            c_id = input("Please enter the copy ID of the book you are returning: ")
+            checkout_id = input("Please enter the checkout ID of the book: ")
+
+            with engine.connect() as connection:
+                # Update the copy table to reflect the book is available
+                copy_table = meta.tables['Copy']
+                stmt = update(copy_table).values(Availability_Status="Available").where(copy_table.c.Copy_ID == c_id)
+                connection.execute(stmt)
+
+                # Update the return date in the checkouts table
+                checkouts_table = meta.tables['Checkouts']
+                stmt = update(checkouts_table).values(Return_Date=date.today()).where(checkouts_table.c.Checkout_ID == checkout_id)
+                connection.execute(stmt)
+                print(f'\nSuccessfully Returned and Return Date saved to be the present date : {date.today()}\n')
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 def main():
     while True:
