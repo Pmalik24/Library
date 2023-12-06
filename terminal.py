@@ -14,8 +14,8 @@ from dateutil.relativedelta import relativedelta
 
 host = "localhost"
 database = "Library"
-# user = "root"
-# password = "<>"
+user = "root" # enter your username if not root
+password = "<>" # enter yur pass
 
 def create_connection_string(user, password, host, database):
     return f"mysql+mysqlconnector://{user}:{password}@{host}/{database}"
@@ -414,6 +414,53 @@ def librarian_update():
     except Exception as e:
         print(f"An error occurred: {e}")
 
+def member_menu():
+        while True:
+            print("\nMember Menu:")
+            print("1. View Fines\n2. Search Books\n3. Go Back\n4. Exit\n")
+            print('All checkouts and reserves are processed by Librarians, Please Enter the Librarian menu to process Checkouts/Returns\n')
+            view_choice = input("Select an option: ")
+
+            if view_choice == "1":
+                member_view_fines()
+            elif view_choice == "2":
+                member_search_books()
+            elif view_choice == "3":
+                return  # This will return to the previous menu (admin_menu)
+            elif view_choice == "4":
+                sys.exit("Exiting the system.")
+            else:
+                print("Invalid choice, please try again.")
+
+def member_view_fines():
+    try:
+
+        engine = create_db_engine(user, password, host, database)
+        
+        # Prompt the user for the member ID
+        member_id = int(input("Please enter your member ID: "))
+        
+        with engine.connect() as connection:
+            # Check if the member exists
+            result = connection.execute(text("SELECT COUNT(*) FROM Members WHERE Member_ID = :member_id"), {'member_id': member_id})
+            member_exists = result.scalar()
+            
+            if member_exists == 0:
+                print(f"Member with ID {member_id} does not exist.")
+                return
+
+            # If the member exists, call the stored procedure
+            connection.execute(text("CALL CalculateTotalFines(:member_id, @totalFines)"), {'member_id': member_id})
+            total_fines = connection.execute(text("SELECT @totalFines")).scalar()
+            
+            if total_fines is None:
+                print(f"Member with ID {member_id} has no unpaid fines.")
+            else:
+                print(f"Member with ID {member_id} has unpaid fines totaling: ${total_fines:.2f}")
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
 def main():
     while True:
         print("Welcome to the Library Management System")
@@ -424,8 +471,8 @@ def main():
             admin_menu()
         elif choice == "2":
             librarian_menu()
-        # elif choice == "3":
-        #     member_menu()
+        elif choice == "3":
+            member_menu()
         elif choice == "4":
             print("Exiting the system.")
             break
