@@ -22,13 +22,13 @@ def create_db_engine(user, password, host, database):
 def admin_menu():
     while True:
         print("\nAdmin Menu:")
-        print("1. Insert\n2. Update\n3. Delete\n4. View\n5. Return to Main Menu\n6. Exit")
+        print("1. Insert\n2. Update Member Info\n3. Delete\n4. View\n5. Return to Main Menu\n6. Exit")
         admin_choice = input("Select an option: ")
 
         if admin_choice == "1":
             admin_insert_menu()
         elif admin_choice == "2":
-            admin_update()
+            admin_update_member()
         elif admin_choice == "3":
              admin_delete_menu()
         elif admin_choice == "4":
@@ -39,6 +39,37 @@ def admin_menu():
             sys.exit("Exiting the system.")
         else:
             print("Invalid choice, please try again.")
+
+def admin_update_member():
+    try:
+        engine = create_db_engine(user, password, host, database)
+        member_id = int(input("Enter the ID of the member to update: "))
+
+        with engine.connect() as connection:
+            # Check if the member exists
+            exists_query = text("SELECT COUNT(*) FROM Members WHERE Member_ID = :member_id")
+            result = connection.execute(exists_query, {'member_id': member_id})
+            if result.scalar() == 0:
+                print("\nMember does not exist\n.")
+                return
+
+            new_subscription_id = input('Enter new subscription level for the member: ')
+            new_email = input("Enter new email for the member: ")
+
+            # Update the member's subscription ID and other fields
+            update_query = text("UPDATE Members SET Email = :new_email, Subscription_ID = :new_subscription_id WHERE Member_ID = :member_id")
+            connection.execute(update_query, {
+                'new_email': new_email, 
+                'new_subscription_id': new_subscription_id, 
+                'member_id': member_id
+            })
+
+            print(f"Member updated successfully with new Subscription ID: {new_subscription_id}, new Email = {new_email}")
+
+            connection.commit()
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 def admin_insert_menu():
     while True:
@@ -166,8 +197,6 @@ def admin_view_menu():
         else:
             print("Invalid choice, please try again.")
 
-# Define similar functions for librarian_menu(), member_menu(), etc.
-
 def admin_view_books():
     try:
         engine = create_db_engine(user, password, host, database)
@@ -185,10 +214,6 @@ def admin_view_members():
         print(df)
     except Exception as e:
         print(f"An error occurred: {e}")
-
-def admin_update():
-    # Implementation for update functionality
-    pass
 
 def admin_delete_menu():
     while True:
