@@ -15,7 +15,10 @@ from dateutil.relativedelta import relativedelta
 host = "localhost"
 database = "Library"
 user = "root" # enter your username if not root
-password = "<>" # enter yur pass
+password = "Sql.2424My" # enter yur pass
+
+def admin_delete_book():
+    pass
 
 def create_connection_string(user, password, host, database):
     return f"mysql+mysqlconnector://{user}:{password}@{host}/{database}"
@@ -262,9 +265,6 @@ def admin_delete_member():
         if connection:
             connection.close()
 
-def admin_delete_book():
-    pass
-
 def librarian_menu():
     while True:
         print("\nLibrarian Menu:")
@@ -377,7 +377,9 @@ def librarian_update():
                 copy_table = meta.tables['Copy']
                 stmt = update(copy_table).values(Availability_Status="Checked Out").where(copy_table.c.Copy_ID == c_id)
                 connection.execute(stmt)
+                connection.commit()
 
+            with engine.connect() as connection:
                 # Insert a row into the checkouts table
                 checkouts_table = meta.tables['Checkouts']
                 statement = checkouts_table.insert().values(
@@ -394,6 +396,8 @@ def librarian_update():
                 checkout_df = pd.read_sql("SELECT Checkout_ID FROM Checkouts", con=engine)
                 checkout_id = checkout_df["Checkout_ID"].max()
                 print(f"Your checkout ID is {checkout_id}. Please save this to return the book")
+                
+                connection.commit()
 
         elif action == 1:  # returning a book
             c_id = input("Please enter the copy ID of the book you are returning: ")
@@ -404,12 +408,16 @@ def librarian_update():
                 copy_table = meta.tables['Copy']
                 stmt = update(copy_table).values(Availability_Status="Available").where(copy_table.c.Copy_ID == c_id)
                 connection.execute(stmt)
-
+                connection.commit()
+            
+            with engine.connect() as connection:
                 # Update the return date in the checkouts table
                 checkouts_table = meta.tables['Checkouts']
                 stmt = update(checkouts_table).values(Return_Date=date.today()).where(checkouts_table.c.Checkout_ID == checkout_id)
                 connection.execute(stmt)
                 print(f'\nSuccessfully Returned and Return Date saved to be the present date : {date.today()}\n')
+
+                connection.commit()
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -417,17 +425,19 @@ def librarian_update():
 def member_menu():
         while True:
             print("\nMember Menu:")
-            print("1. View Fines\n2. Search Books\n3. Go Back\n4. Exit\n")
+            print("1. View Fines\n2. Search Books\n3. Reserve Books\n4.Go Back\n5. Exit\n")
             print('All checkouts and reserves are processed by Librarians, Please Enter the Librarian menu to process Checkouts/Returns\n')
             view_choice = input("Select an option: ")
 
             if view_choice == "1":
                 member_view_fines()
             elif view_choice == "2":
-                member_search_books()
+                member_book_search()
             elif view_choice == "3":
-                return  # This will return to the previous menu (admin_menu)
+                member_reservation()
             elif view_choice == "4":
+                return  # This will return to the previous menu (admin_menu)
+            elif view_choice == "5":
                 sys.exit("Exiting the system.")
             else:
                 print("Invalid choice, please try again.")
@@ -458,6 +468,79 @@ def member_view_fines():
             else:
                 print(f"Member with ID {member_id} has unpaid fines totaling: ${total_fines:.2f}")
     
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def member_book_search():
+    try:
+        engine = create_db_engine(user, password, host, database)
+        method = int(input("Search by Title (0), Author Last Name (1), or ISBN (2) "))
+
+        if method == 0: # search by title
+            title = input("Enter title: ")
+            query = f"SELECT * FROM Books WHERE LOWER(Title) = LOWER('{title}')"
+            title_df = pd.read_sql(query, con = engine)
+            
+            if title_df["Book_ID"].count() == 0:
+                print(f"No books found with given title: {title}")
+            else:
+                print(title_df)
+            
+        elif method == 1: # by author_id
+            author_name = input("Enter Authors Last Name: ")
+            query = f"SELECT * FROM Books_Authors ba JOIN Books b ON ba.BooksBook_ID = b.Book_ID JOIN Authors a ON a.Author_ID = ba.AuthorsAuthor_ID WHERE LOWER(a.Last_Name) = LOWER('{author_name}')"
+            
+            author_df = pd.read_sql(query, con = engine)
+            
+            if author_df['Book_ID'].count() == 0:
+                print(f"No books found for last name: {author_name} ")
+            else:
+                print(author_df.drop(["BooksBook_ID", "AuthorsAuthor_ID"], axis = 1))
+        
+        elif method == 2: #ISBN
+            isbn = input("Enter the 13 digit ISBN: ")
+            query = f"SELECT * FROM Books WHERE ISBN = {isbn}"
+            isbn_df = pd.read_sql(query, con = engine)
+            
+            if isbn_df["Book_ID"].count() == 0:
+                print(f"No books found with ISBN: {isbn}")
+            else:
+                print(isbn_df)
+        else:
+            print("Invalid Choice")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def member_reservation():
+    try:        
+        engine = create_db_engine(user, password, host, database)
+        meta = MetaData()
+        meta.reflect(bind=engine)
+        
+        mem_id = input("Please enter your member ID: ")
+        copy_id = input("Please enter the copy ID of the book you want to reserve: ")
+        
+        
+        query = f"SELECT Availability_Status FROM COPY WHERE Copy_ID = {copy_id}"
+        aval_df = pd.read_sql(query, con = engine)
+        
+        if aval_df["Availability_Status"][0] == "Checked Out":
+            print("Cannot reserve book, already checked out")
+            
+        else:
+            with engine.connect() as connection:
+                RES = meta.tables["Reservations"]
+                stmt = RES.insert().values(Member_ID = mem_id,
+                                          Copy_ID = copy_id,
+                                          Reservation_Date = date.today())
+                connection.execute(stmt)
+                
+                print("Book successfuly reserved!")
+            
+                connection.commit()
+        
+
+        
     except Exception as e:
         print(f"An error occurred: {e}")
 
