@@ -391,13 +391,14 @@ def librarian_update():
                     Librarian_ID=random.randint(1,10)
                 )
                 connection.execute(statement)
+                
+                connection.commit()
 
                 # Fetch the most recent insert's Checkout_ID
                 checkout_df = pd.read_sql("SELECT Checkout_ID FROM Checkouts", con=engine)
                 checkout_id = checkout_df["Checkout_ID"].max()
                 print(f"Your checkout ID is {checkout_id}. Please save this to return the book")
                 
-                connection.commit()
 
         elif action == 1:  # returning a book
             c_id = input("Please enter the copy ID of the book you are returning: ")
