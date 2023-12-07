@@ -17,9 +17,6 @@ database = "Library"
 user = "root" # enter your username if not root
 password = "Sql.2424My" # enter yur pass
 
-def admin_delete_book():
-    pass
-
 def create_connection_string(user, password, host, database):
     return f"mysql+mysqlconnector://{user}:{password}@{host}/{database}"
 
@@ -119,7 +116,7 @@ def admin_insert_books():
                 'publication_year': publication_year
             })
             connection.commit()
-            print("Book successfully added to the database. Here are the last 10 Books")
+            print("\nBook successfully added to the database. Here are the last 10 Books")
             # Fetch and display the latest member(s)
             recent_books_query = text("SELECT * FROM Books ORDER BY Book_ID DESC LIMIT 10")
             recent_books = connection.execute(recent_books_query)
@@ -231,7 +228,7 @@ def admin_delete_menu():
         view_choice = input("Select an option: ")
 
         if view_choice == "1":
-            admin_delete_book()
+            admin_delete_book_copy()
         elif view_choice == "2":
             admin_delete_member()
         elif view_choice == "3":
@@ -240,6 +237,44 @@ def admin_delete_menu():
             sys.exit("Exiting the system.")
         else:
             print("Invalid choice, please try again.")
+
+def admin_delete_book_copy():
+    try:
+        book_id = int(input("Enter the ID of the book copy to delete: "))
+        engine = create_db_engine(user, password, host, database)
+
+        # First connection for calling stored procedure
+        connection1 = engine.raw_connection()
+        try:
+            cursor = connection1.cursor()
+            cursor.callproc("DeleteBookCopy", [book_id])
+
+            # Fetch results from the stored procedure
+            for result_set in cursor.stored_results():
+                for result in result_set.fetchall():
+                    print(result[0])  # Assuming the message is the first column
+
+            connection1.commit()
+        finally:
+            cursor.close()
+            connection1.close()
+
+        # Second connection for fetching and displaying last 10 books
+        connection2 = engine.connect()
+        try:
+            print("\nBook successfully deleted from the database. Here are the last 10 Books")
+            recent_books_query = text("SELECT * FROM Books ORDER BY Book_ID DESC LIMIT 10")
+            recent_books = connection2.execute(recent_books_query)
+
+            for book in recent_books:
+                # Formatting the date
+                formatted_date = book.Publication_Year.strftime('%Y-%m-%d') if book.Publication_Year else 'Unknown'
+                print(f"({book.Book_ID}, '{book.Title}', {book.Author_ID}, {book.Genre_ID}, '{book.ISBN}', '{formatted_date}')")
+        finally:
+            connection2.close()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 def admin_delete_member():
     cursor = None
