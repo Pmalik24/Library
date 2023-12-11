@@ -223,7 +223,7 @@ def admin_view_members():
 
 def admin_delete_menu():
     while True:
-        print("\nAdmin Delete\Add Menu:")
+        print("\nAdmin Delete Menu:")
         print("1. Books\n2. Members\n3. Go Back\n4. Exit\n")
         view_choice = input("Select an option: ")
 
@@ -461,7 +461,7 @@ def librarian_update():
 def member_menu():
         while True:
             print("\nMember Menu:")
-            print("1. View Fines\n2. Search Books\n3. Reserve Books\n4.Go Back\n5. Exit\n")
+            print("1. View Fines\n2. Search Books\n3. Reserve Books\n4. Go Back\n5. Exit\n")
             print('All checkouts and reserves are processed by Librarians, Please Enter the Librarian menu to process Checkouts/Returns\n')
             view_choice = input("Select an option: ")
 
