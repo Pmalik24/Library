@@ -15,7 +15,7 @@ from dateutil.relativedelta import relativedelta
 host = "localhost"
 database = "Library"
 user = "root" # enter your username if not root
-password = "Sql.2424My" # enter yur pass
+password = "<>" # enter yur password
 
 def create_connection_string(user, password, host, database):
     return f"mysql+mysqlconnector://{user}:{password}@{host}/{database}"
