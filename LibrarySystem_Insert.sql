@@ -1,0 +1,13 @@
+INSERT INTO Admins(Admin_ID, First_Name, Last_Name, Email, Access_Level) VALUES (?, ?, ?, ?, ?);
+INSERT INTO Authors(Author_ID, First_Name, Last_Name, Biography) VALUES (?, ?, ?, ?);
+INSERT INTO Books(Book_ID, Title, Author_ID, Genre_ID, ISBN, Publication_Year) VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO Books_Authors(BooksBook_ID, AuthorsAuthor_ID) VALUES (?, ?);
+INSERT INTO Checkouts(Checkout_ID, Member_ID, Copy_ID, Checkout_Date, Due_Date, Return_Date, Librarian_ID) VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO Copy(Copy_ID, Book_ID, Availability_Status) VALUES (?, ?, ?);
+INSERT INTO Fines(Fine_ID, Member_ID, Checkout_ID, Amount, Payment_Status) VALUES (?, ?, ?, ?, ?);
+INSERT INTO Genre(Genre_ID, Genre_Name) VALUES (?, ?);
+INSERT INTO Librarians(Librarian_ID, First_Name, Last_Name, Email) VALUES (?, ?, ?, ?);
+INSERT INTO Members(Member_ID, First_Name, Last_Name, Email, Subscription_ID) VALUES (?, ?, ?, ?, ?);
+INSERT INTO Reservations(Reservation_ID, Member_ID, Copy_ID, Reservation_Date, CheckoutsCheckout_ID) VALUES (?, ?, ?, ?, ?);
+INSERT INTO Reviews(Review_ID, Member_ID, Book_ID, Review_Text, Ratings) VALUES (?, ?, ?, ?, ?);
+INSERT INTO Subscriptions(Subscription_ID, Subscription_Type, Fee, Duration) VALUES (?, ?, ?, ?);
