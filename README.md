@@ -1,5 +1,5 @@
 # Library
-BookDelSP.sql --> SQL code for stored procedure to delete a book
+BookDelSP.sql --> SQL code for stored procedure to delete a book\n
 ViewsProceduresFunctionsTrigger.sql --> SQL file that stores code for all views, original stored procedures, functions and triggers
 inserting_books_SP.sql --> SQL code for added stored procedure for inserting book
 names.txt --> A text file for generating random author names
